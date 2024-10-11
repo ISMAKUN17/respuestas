@@ -234,6 +234,70 @@
     font-weight: 600;
     color: var(--primary-color);
   }
+
+  /* Media Queries for Responsive Design */
+  @media screen and (max-width: 768px) {
+    .container {
+      padding: 20px;
+    }
+
+    .input-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .reservations-table {
+      font-size: 14px;
+    }
+
+    .reservations-table th, .reservations-table td {
+      padding: 12px 8px;
+    }
+
+    .modal-content {
+      width: 90%;
+      margin: 15% auto;
+    }
+  }
+
+  @media screen and (max-width: 480px) {
+    body {
+      padding: 10px;
+    }
+
+    .container {
+      padding: 15px;
+    }
+
+    h1 {
+      font-size: 24px;
+    }
+
+    .input-area {
+      padding: 20px;
+    }
+
+    .submit-btn {
+      font-size: 16px;
+      padding: 12px;
+    }
+
+    .reservations-table {
+      font-size: 12px;
+    }
+
+    .reservations-table th, .reservations-table td {
+      padding: 8px 4px;
+    }
+
+    .modal-content {
+      width: 95%;
+      padding: 20px;
+    }
+
+    #reservationDetails p {
+      font-size: 14px;
+    }
+  }
 </style>
 </head>
 <body>
