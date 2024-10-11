@@ -1,0 +1,376 @@
+<html><head><base href="https://websim.adventurecompany.local/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modern Restaurant Reservation Manager</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
+
+  :root {
+    --primary-color: #4a90e2;
+    --secondary-color: #50c878;
+    --background-color: #f8f9fa;
+    --text-color: #333;
+    --input-bg: #fff;
+    --input-border: #e0e0e0;
+    --input-focus: #4a90e2;
+    --button-gradient-start: #4a90e2;
+    --button-gradient-end: #5a9eea;
+    --table-header: #f1f3f5;
+    --table-row-even: #ffffff;
+    --table-row-odd: #f8f9fa;
+    --table-row-hover: #e8f1fd;
+    --modal-bg: rgba(0, 0, 0, 0.5);
+  }
+
+  body {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    margin: 0;
+    padding: 20px;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 30px;
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  }
+
+  h1 {
+    text-align: center;
+    color: var(--primary-color);
+    margin-bottom: 30px;
+    font-weight: 600;
+  }
+
+  .input-area {
+    background-color: var(--input-bg);
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+    margin-bottom: 30px;
+  }
+
+  .input-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+  }
+
+  .input-group {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .input-group input, .input-group textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--input-border);
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s ease;
+    background-color: var(--input-bg);
+    font-family: 'Poppins', sans-serif;
+  }
+
+  .input-group input:focus, .input-group textarea:focus {
+    outline: none;
+    border-color: var(--input-focus);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+  }
+
+  .input-group label {
+    position: absolute;
+    top: 50%;
+    left: 16px;
+    transform: translateY(-50%);
+    font-size: 16px;
+    color: #999;
+    pointer-events: none;
+    transition: all 0.3s ease;
+  }
+
+  .input-group input:focus + label,
+  .input-group input:not(:placeholder-shown) + label,
+  .input-group textarea:focus + label,
+  .input-group textarea:not(:placeholder-shown) + label {
+    top: 0;
+    font-size: 12px;
+    color: var(--primary-color);
+    background-color: var(--input-bg);
+    padding: 0 5px;
+    transform: translateY(-50%) scale(0.9);
+  }
+
+  .input-group input:focus,
+  .input-group textarea:focus {
+    padding-top: 20px;
+    padding-bottom: 4px;
+  }
+
+  .submit-btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--button-gradient-start), var(--button-gradient-end));
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 20px;
+  }
+
+  .submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+  }
+
+  .reservations-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-top: 30px;
+    background-color: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+  }
+
+  .reservations-table th, .reservations-table td {
+    padding: 16px;
+    text-align: left;
+  }
+
+  .reservations-table th {
+    background-color: var(--table-header);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+  }
+
+  .reservations-table tr:nth-child(even) {
+    background-color: var(--table-row-even);
+  }
+
+  .reservations-table tr:nth-child(odd) {
+    background-color: var(--table-row-odd);
+  }
+
+  .reservations-table tbody tr {
+    transition: all 0.3s ease;
+  }
+
+  .reservations-table tbody tr:hover {
+    background-color: var(--table-row-hover);
+    cursor: pointer;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: var(--modal-bg);
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal-content {
+    background-color: #fefefe;
+    margin: 10% auto;
+    padding: 30px;
+    border: 1px solid #888;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  .close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    transition: all 0.3s ease;
+  }
+
+  .close:hover,
+  .close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  #reservationDetails p {
+    margin: 10px 0;
+    font-size: 16px;
+  }
+
+  #reservationDetails strong {
+    font-weight: 600;
+    color: var(--primary-color);
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>Modern Restaurant Reservation Manager</h1>
+    <div class="input-area">
+      <form id="reservationForm">
+        <div class="input-grid">
+          <div class="input-group">
+            <input type="date" id="date" name="date" required placeholder=" ">
+            <label for="date">Date</label>
+          </div>
+          <div class="input-group">
+            <input type="text" id="roomNumber" name="roomNumber" required placeholder=" ">
+            <label for="roomNumber">Room Number</label>
+          </div>
+          <div class="input-group">
+            <input type="text" id="guestName" name="guestName" required placeholder=" ">
+            <label for="guestName">Guest Name</label>
+          </div>
+          <div class="input-group">
+            <input type="text" id="restaurant" name="restaurant" required placeholder=" ">
+            <label for="restaurant">Restaurant</label>
+          </div>
+          <div class="input-group">
+            <input type="time" id="time" name="time" required placeholder=" ">
+            <label for="time">Time</label>
+          </div>
+          <div class="input-group">
+            <input type="number" id="pax" name="pax" required placeholder=" " min="1">
+            <label for="pax">Number of Guests (PAX)</label>
+          </div>
+        </div>
+        <div class="input-group" style="margin-top: 20px;">
+          <textarea id="notes" name="notes" rows="3" placeholder=" "></textarea>
+          <label for="notes">Notes</label>
+        </div>
+        <button type="submit" class="submit-btn">Submit Reservation</button>
+      </form>
+    </div>
+
+    <table class="reservations-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Room</th>
+          <th>Guest</th>
+          <th>Restaurant</th>
+          <th>Time</th>
+          <th>PAX</th>
+        </tr>
+      </thead>
+      <tbody id="reservationsTableBody">
+        <!-- Reservations will be dynamically added here -->
+      </tbody>
+    </table>
+  </div>
+
+  <div id="reservationModal" class="modal">
+    <div class="modal-content">
+      <span class="close">&times;</span>
+      <h2>Reservation Details</h2>
+      <div id="reservationDetails"></div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const form = document.getElementById('reservationForm');
+      const tableBody = document.getElementById('reservationsTableBody');
+      const modal = document.getElementById('reservationModal');
+      const modalContent = document.getElementById('reservationDetails');
+      const closeBtn = document.getElementsByClassName('close')[0];
+
+      let reservations = [];
+
+      form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const reservation = Object.fromEntries(formData.entries());
+        reservations.push(reservation);
+        updateTable();
+        form.reset();
+      });
+
+      function updateTable() {
+        tableBody.innerHTML = '';
+        reservations.forEach((reservation, index) => {
+          const row = tableBody.insertRow();
+          row.innerHTML = `
+            <td>${reservation.date}</td>
+            <td>${reservation.roomNumber}</td>
+            <td>${reservation.guestName}</td>
+            <td>${reservation.restaurant}</td>
+            <td>${reservation.time}</td>
+            <td>${reservation.pax}</td>
+          `;
+          row.addEventListener('click', () => showReservationDetails(index));
+        });
+      }
+
+      function showReservationDetails(index) {
+        const reservation = reservations[index];
+        modalContent.innerHTML = `
+          <p><strong>Date:</strong> ${reservation.date}</p>
+          <p><strong>Room Number:</strong> ${reservation.roomNumber}</p>
+          <p><strong>Guest Name:</strong> ${reservation.guestName}</p>
+          <p><strong>Restaurant:</strong> ${reservation.restaurant}</p>
+          <p><strong>Time:</strong> ${reservation.time}</p>
+          <p><strong>Number of Guests (PAX):</strong> ${reservation.pax}</p>
+          <p><strong>Notes:</strong> ${reservation.notes || 'N/A'}</p>
+        `;
+        modal.style.display = 'block';
+      }
+
+      closeBtn.onclick = function() {
+        modal.style.display = 'none';
+      }
+
+      window.onclick = function(event) {
+        if (event.target == modal) {
+          modal.style.display = 'none';
+        }
+      }
+
+      // Smooth expansion of input fields
+      const inputs = document.querySelectorAll('.input-group input, .input-group textarea');
+      inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+          this.style.height = 'auto';
+          this.style.height = (this.scrollHeight) + 'px';
+        });
+        input.addEventListener('blur', function() {
+          this.style.height = '';
+        });
+      });
+    });
+  </script>
+</body>
+</html>
