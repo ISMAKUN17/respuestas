@@ -1,4 +1,4 @@
-<html><head><base href="." />
+<base href="." />
 <!-- Required meta tags -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -88,43 +88,59 @@ body {
     min-width: 200px;
 }
 
-.notification {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 15px 25px;
-    background: #4CAF50;
-    color: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    z-index: 1000;
-    animation: slideIn 0.5s ease-out;
+.nps-category {
+    font-size: 1rem;
+    margin-top: 0.5rem;
+    opacity: 0.8;
 }
 
-@keyframes slideIn {
-    from {
-        transform: translateX(100%);
-        opacity: 0;
-    }
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
+.overall-nps {
+    background: white;
+    padding: 2rem;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
 }
 
-@media (max-width: 768px) {
-    .results-container {
-        padding: 1rem;
-    }
-    
-    .filters {
-        flex-direction: column;
-    }
-    
-    .search-input {
-        width: 100%;
-    }
+.nps-score {
+    font-size: 3.5rem;
+    font-weight: 700;
+    text-align: center;
+    padding: 2rem;
+    border-radius: 12px;
+    margin: 1rem 0;
 }
+
+.nps-legend {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.promoter {
+    background: #28a745;
+}
+
+.passive {
+    background: #ffc107;
+}
+
+.detractor {
+    background: #dc3545;
+}
+
 </style>
 </head>
 <body>
@@ -157,6 +173,24 @@ body {
             </select>
         </div>
 
+        <div class="overall-nps mb-4">
+            <h2 class="text-center">Overall NPS Score</h2>
+            <div class="nps-score" :class="getScoreClass(overallNPS)">
+                {{ overallNPS }}
+            </div>
+            <div class="nps-legend">
+                <div class="legend-item">
+                    <span class="dot promoter"></span> Promoters (9-10)
+                </div>
+                <div class="legend-item">
+                    <span class="dot passive"></span> Passives (7-8)
+                </div>
+                <div class="legend-item">
+                    <span class="dot detractor"></span> Detractors (0-6)
+                </div>
+            </div>
+        </div>
+
         <div class="survey-card" v-for="survey in filteredSurveys" :key="survey.id">
             <div class="d-flex justify-content-between align-items-center">
                 <h3>{{ survey.personalInfo.name }}</h3>
@@ -164,7 +198,8 @@ body {
             </div>
             
             <div :class="['satisfaction-score', getScoreClass(survey.satisfactionScore)]">
-                {{ survey.satisfactionScore }}%
+                {{ survey.satisfactionScore }}/10
+                <div class="nps-category">{{ getNPSLabel(survey.npsCategory) }}</div>
             </div>
             
             <div class="personal-info mb-3">
@@ -207,7 +242,7 @@ new Vue({
         showNotification: false,
         latestSurvey: null,
         lastKnownKey: null,
-        audioContext: null
+        overallNPS: 0
     },
     created() {
         this.loadSurveys();
@@ -221,61 +256,49 @@ new Vue({
                 for (let id in data) {
                     const survey = data[id];
                     const ratings = survey.ratings.filter(r => r > 0);
-                    const score = (ratings.reduce((a, b) => a + b, 0) / ratings.length) * 20;
+                    // Calculate NPS score based on the average rating
+                    const avgScore = (ratings.reduce((a, b) => a + b, 0) / ratings.length) * 2; // Convert 5-scale to 10-scale
+                    const npsCategory = this.getNPSCategory(avgScore);
                     this.surveys.push({
                         id,
                         ...survey,
-                        satisfactionScore: Math.round(score)
+                        satisfactionScore: Math.round(avgScore),
+                        npsCategory: npsCategory
                     });
                 }
+                // Calculate overall NPS
+                this.calculateOverallNPS();
             });
         },
-        setupNewSurveyListener() {
-            database.ref('surveys').limitToLast(1).on('child_added', (snapshot) => {
-                if (this.lastKnownKey !== snapshot.key) {
-                    this.lastKnownKey = snapshot.key;
-                    const newSurvey = snapshot.val();
-                    this.latestSurvey = newSurvey;
-                    this.showNotification = true;
-                    
-                    // Create audio context on user interaction
-                    if (!this.audioContext) {
-                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    }
-
-                    // Try to play notification sound if audio context is running
-                    try {
-                        if (this.audioContext && this.audioContext.state === 'running') {
-                            const oscillator = this.audioContext.createOscillator();
-                            const gainNode = this.audioContext.createGain();
-                            
-                            oscillator.connect(gainNode);
-                            gainNode.connect(this.audioContext.destination);
-                            
-                            gainNode.gain.value = 0.1; // Reduced volume
-                            oscillator.frequency.value = 440; // A4 note
-                            
-                            oscillator.start();
-                            setTimeout(() => oscillator.stop(), 200); // Short beep
-                        }
-                    } catch (error) {
-                        console.log('Notification sound could not be played:', error);
-                    }
-
-                    // Hide notification after 5 seconds
-                    setTimeout(() => {
-                        this.showNotification = false;
-                    }, 5000);
-                }
-            });
+        getNPSCategory(score) {
+            if (score >= 9) return 'promoter';
+            if (score >= 7) return 'passive';
+            return 'detractor';
+        },
+        calculateOverallNPS() {
+            const total = this.surveys.length;
+            if (total === 0) return 0;
+            
+            const promoters = this.surveys.filter(s => s.npsCategory === 'promoter').length;
+            const detractors = this.surveys.filter(s => s.npsCategory === 'detractor').length;
+            
+            const npsScore = ((promoters / total) - (detractors / total)) * 100;
+            this.overallNPS = Math.round(npsScore);
         },
         formatDate(timestamp) {
             return new Date(timestamp).toLocaleDateString();
         },
         getScoreClass(score) {
-            if (score >= 80) return 'score-excellent';
-            if (score >= 60) return 'score-good';
+            if (score >= 9) return 'score-excellent';
+            if (score >= 7) return 'score-good';
             return 'score-poor';
+        },
+        getNPSLabel(category) {
+            switch(category) {
+                case 'promoter': return 'Promoter';
+                case 'passive': return 'Passive';
+                case 'detractor': return 'Detractor';
+            }
         }
     },
     computed: {
@@ -313,17 +336,6 @@ new Vue({
             
             return filtered;
         }
-    },
-    mounted() {
-        // Initialize audio context on first user interaction
-        document.addEventListener('click', () => {
-            if (!this.audioContext) {
-                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            }
-            if (this.audioContext && this.audioContext.state === 'suspended') {
-                this.audioContext.resume();
-            }
-        }, { once: true });
     }
 });
 </script>
