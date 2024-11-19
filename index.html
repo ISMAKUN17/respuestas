@@ -1,440 +1,252 @@
-<html><head><base href="https://websim.adventurecompany.local/">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Modern Restaurant Reservation Manager</title>
+<html><head><base href="." />
+<!-- Required meta tags -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap');
-
-  :root {
-    --primary-color: #4a90e2;
-    --secondary-color: #50c878;
-    --background-color: #f8f9fa;
-    --text-color: #333;
-    --input-bg: #fff;
-    --input-border: #e0e0e0;
-    --input-focus: #4a90e2;
-    --button-gradient-start: #4a90e2;
-    --button-gradient-end: #5a9eea;
-    --table-header: #f1f3f5;
-    --table-row-even: #ffffff;
-    --table-row-odd: #f8f9fa;
-    --table-row-hover: #e8f1fd;
-    --modal-bg: rgba(0, 0, 0, 0.5);
-  }
-
-  body {
+body {
     font-family: 'Poppins', sans-serif;
-    background-color: var(--background-color);
-    color: var(--text-color);
-    line-height: 1.6;
-    margin: 0;
-    padding: 20px;
-  }
+    background: linear-gradient(135deg, #6B73FF 0%, #000DFF 100%);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+}
 
-  .container {
+.results-container {
     max-width: 1200px;
-    margin: 0 auto;
-    padding: 30px;
-    background-color: #fff;
-    border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-  }
+    margin: 2rem auto;
+    padding: 2rem;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+}
 
-  h1 {
+.survey-card {
+    background: #fff;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+    transition: transform 0.3s ease;
+}
+
+.survey-card:hover {
+    transform: translateY(-5px);
+}
+
+.satisfaction-score {
+    font-size: 2.5rem;
+    font-weight: 600;
     text-align: center;
-    color: var(--primary-color);
-    margin-bottom: 30px;
-    font-weight: 600;
-  }
-
-  .input-area {
-    background-color: var(--input-bg);
+    padding: 1rem;
     border-radius: 12px;
-    padding: 30px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-    margin-bottom: 30px;
-  }
+    margin-bottom: 1rem;
+}
 
-  .input-grid {
+.score-excellent {
+    background: #d4edda;
+    color: #155724;
+}
+
+.score-good {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.score-poor {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.ratings-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-  }
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin: 1rem 0;
+}
 
-  .input-group {
-    position: relative;
-    overflow: hidden;
-  }
+.rating-item {
+    background: #f8f9fa;
+    padding: 1rem;
+    border-radius: 10px;
+}
 
-  .input-group input, .input-group textarea {
-    width: 100%;
-    padding: 12px 16px;
-    border: 1px solid var(--input-border);
-    border-radius: 8px;
-    font-size: 16px;
-    transition: all 0.3s ease;
-    background-color: var(--input-bg);
-    font-family: 'Poppins', sans-serif;
-  }
+.filters {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+}
 
-  .input-group input:focus, .input-group textarea:focus {
-    outline: none;
-    border-color: var(--input-focus);
-    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
-  }
+.search-input {
+    flex: 1;
+    min-width: 200px;
+}
 
-  .input-group label {
-    position: absolute;
-    top: 50%;
-    left: 16px;
-    transform: translateY(-50%);
-    font-size: 16px;
-    color: #999;
-    pointer-events: none;
-    transition: all 0.3s ease;
-  }
-
-  .input-group input:focus + label,
-  .input-group input:not(:placeholder-shown) + label,
-  .input-group textarea:focus + label,
-  .input-group textarea:not(:placeholder-shown) + label {
-    top: 0;
-    font-size: 12px;
-    color: var(--primary-color);
-    background-color: var(--input-bg);
-    padding: 0 5px;
-    transform: translateY(-50%) scale(0.9);
-  }
-
-  .input-group input:focus,
-  .input-group textarea:focus {
-    padding-top: 20px;
-    padding-bottom: 4px;
-  }
-
-  .submit-btn {
-    display: block;
-    width: 100%;
-    padding: 14px;
-    background: linear-gradient(135deg, var(--button-gradient-start), var(--button-gradient-end));
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 18px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    margin-top: 20px;
-  }
-
-  .submit-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
-  }
-
-  .reservations-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    margin-top: 30px;
-    background-color: #fff;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-  }
-
-  .reservations-table th, .reservations-table td {
-    padding: 16px;
-    text-align: left;
-  }
-
-  .reservations-table th {
-    background-color: var(--table-header);
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 14px;
-    letter-spacing: 0.5px;
-  }
-
-  .reservations-table tr:nth-child(even) {
-    background-color: var(--table-row-even);
-  }
-
-  .reservations-table tr:nth-child(odd) {
-    background-color: var(--table-row-odd);
-  }
-
-  .reservations-table tbody tr {
-    transition: all 0.3s ease;
-  }
-
-  .reservations-table tbody tr:hover {
-    background-color: var(--table-row-hover);
-    cursor: pointer;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  }
-
-  .modal {
-    display: none;
-    position: fixed;
-    z-index: 1;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    overflow: auto;
-    background-color: var(--modal-bg);
-    animation: fadeIn 0.3s ease;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  .modal-content {
-    background-color: #fefefe;
-    margin: 10% auto;
-    padding: 30px;
-    border: 1px solid #888;
-    width: 80%;
-    max-width: 600px;
-    border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-    animation: slideIn 0.3s ease;
-  }
-
-  @keyframes slideIn {
-    from { transform: translateY(-50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-
-  .close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    transition: all 0.3s ease;
-  }
-
-  .close:hover,
-  .close:focus {
-    color: #000;
-    text-decoration: none;
-    cursor: pointer;
-  }
-
-  #reservationDetails p {
-    margin: 10px 0;
-    font-size: 16px;
-  }
-
-  #reservationDetails strong {
-    font-weight: 600;
-    color: var(--primary-color);
-  }
-
-  /* Media Queries for Responsive Design */
-  @media screen and (max-width: 768px) {
-    .container {
-      padding: 20px;
+@media (max-width: 768px) {
+    .results-container {
+        padding: 1rem;
     }
-
-    .input-grid {
-      grid-template-columns: 1fr;
+    
+    .filters {
+        flex-direction: column;
     }
-
-    .reservations-table {
-      font-size: 14px;
+    
+    .search-input {
+        width: 100%;
     }
-
-    .reservations-table th, .reservations-table td {
-      padding: 12px 8px;
-    }
-
-    .modal-content {
-      width: 90%;
-      margin: 15% auto;
-    }
-  }
-
-  @media screen and (max-width: 480px) {
-    body {
-      padding: 10px;
-    }
-
-    .container {
-      padding: 15px;
-    }
-
-    h1 {
-      font-size: 24px;
-    }
-
-    .input-area {
-      padding: 20px;
-    }
-
-    .submit-btn {
-      font-size: 16px;
-      padding: 12px;
-    }
-
-    .reservations-table {
-      font-size: 12px;
-    }
-
-    .reservations-table th, .reservations-table td {
-      padding: 8px 4px;
-    }
-
-    .modal-content {
-      width: 95%;
-      padding: 20px;
-    }
-
-    #reservationDetails p {
-      font-size: 14px;
-    }
-  }
+}
 </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Modern Restaurant Reservation Manager</h1>
-    <div class="input-area">
-      <form id="reservationForm">
-        <div class="input-grid">
-          <div class="input-group">
-            <input type="date" id="date" name="date" required placeholder=" ">
-            <label for="date">Date</label>
-          </div>
-          <div class="input-group">
-            <input type="text" id="roomNumber" name="roomNumber" required placeholder=" ">
-            <label for="roomNumber">Room Number</label>
-          </div>
-          <div class="input-group">
-            <input type="text" id="guestName" name="guestName" required placeholder=" ">
-            <label for="guestName">Guest Name</label>
-          </div>
-          <div class="input-group">
-            <input type="text" id="restaurant" name="restaurant" required placeholder=" ">
-            <label for="restaurant">Restaurant</label>
-          </div>
-          <div class="input-group">
-            <input type="time" id="time" name="time" required placeholder=" ">
-            <label for="time">Time</label>
-          </div>
-          <div class="input-group">
-            <input type="number" id="pax" name="pax" required placeholder=" " min="1">
-            <label for="pax">Number of Guests (PAX)</label>
-          </div>
+<div id="app">
+    <div class="results-container">
+        <h1 class="text-center mb-4">Survey Results Dashboard</h1>
+        
+        <div class="filters">
+            <input 
+                type="text" 
+                class="form-control search-input" 
+                v-model="search"
+                placeholder="Search by name or room number">
+            
+            <select class="form-select w-auto" v-model="sortBy">
+                <option value="date">Sort by Date</option>
+                <option value="score">Sort by Score</option>
+                <option value="name">Sort by Name</option>
+            </select>
+            
+            <select class="form-select w-auto" v-model="filterScore">
+                <option value="all">All Scores</option>
+                <option value="excellent">Excellent</option>
+                <option value="good">Good</option>
+                <option value="poor">Poor</option>
+            </select>
         </div>
-        <div class="input-group" style="margin-top: 20px;">
-          <textarea id="notes" name="notes" rows="3" placeholder=" "></textarea>
-          <label for="notes">Notes</label>
+
+        <div class="survey-card" v-for="survey in filteredSurveys" :key="survey.id">
+            <div class="d-flex justify-content-between align-items-center">
+                <h3>{{ survey.personalInfo.name }}</h3>
+                <span class="text-muted">{{ formatDate(survey.timestamp) }}</span>
+            </div>
+            
+            <div :class="['satisfaction-score', getScoreClass(survey.satisfactionScore)]">
+                {{ survey.satisfactionScore }}%
+            </div>
+            
+            <div class="personal-info mb-3">
+                <p><strong>Room:</strong> {{ survey.personalInfo.roomNumber }}</p>
+                <p><strong>Butler:</strong> {{ survey.personalInfo.butlerName }}</p>
+                <p><strong>Email:</strong> {{ survey.personalInfo.email }}</p>
+            </div>
+            
+            <div class="ratings-grid">
+                <div class="rating-item" v-for="(rating, index) in survey.ratings" :key="index">
+                    <strong>Q{{ index + 1 }}:</strong> {{ rating }}/5
+                </div>
+            </div>
         </div>
-        <button type="submit" class="submit-btn">Submit Reservation</button>
-      </form>
     </div>
+</div>
 
-    <table class="reservations-table">
-      <thead>
-        <tr>
-          <th>Date</th>
-          <th>Room</th>
-          <th>Guest</th>
-          <th>Restaurant</th>
-          <th>Time</th>
-          <th>PAX</th>
-        </tr>
-      </thead>
-      <tbody id="reservationsTableBody">
-        <!-- Reservations will be dynamically added here -->
-      </tbody>
-    </table>
-  </div>
+<script>
+// Initialize Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyDUirwoSQgvcMZn7uLjKMAxlTA15Jkl2BM",
+    authDomain: "ismakun-bf0fa.firebaseapp.com",
+    databaseURL: "https://ismakun-bf0fa-default-rtdb.firebaseio.com",
+    projectId: "ismakun-bf0fa",
+    storageBucket: "ismakun-bf0fa.firebasestorage.app",
+    messagingSenderId: "1028877703945",
+    appId: "1:1028877703945:web:331de48acbcdf2234a51d8"
+};
 
-  <div id="reservationModal" class="modal">
-    <div class="modal-content">
-      <span class="close">&times;</span>
-      <h2>Reservation Details</h2>
-      <div id="reservationDetails"></div>
-    </div>
-  </div>
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      const form = document.getElementById('reservationForm');
-      const tableBody = document.getElementById('reservationsTableBody');
-      const modal = document.getElementById('reservationModal');
-      const modalContent = document.getElementById('reservationDetails');
-      const closeBtn = document.getElementsByClassName('close')[0];
-
-      let reservations = [];
-
-      form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const formData = new FormData(form);
-        const reservation = Object.fromEntries(formData.entries());
-        reservations.push(reservation);
-        updateTable();
-        form.reset();
-      });
-
-      function updateTable() {
-        tableBody.innerHTML = '';
-        reservations.forEach((reservation, index) => {
-          const row = tableBody.insertRow();
-          row.innerHTML = `
-            <td>${reservation.date}</td>
-            <td>${reservation.roomNumber}</td>
-            <td>${reservation.guestName}</td>
-            <td>${reservation.restaurant}</td>
-            <td>${reservation.time}</td>
-            <td>${reservation.pax}</td>
-          `;
-          row.addEventListener('click', () => showReservationDetails(index));
-        });
-      }
-
-      function showReservationDetails(index) {
-        const reservation = reservations[index];
-        modalContent.innerHTML = `
-          <p><strong>Date:</strong> ${reservation.date}</p>
-          <p><strong>Room Number:</strong> ${reservation.roomNumber}</p>
-          <p><strong>Guest Name:</strong> ${reservation.guestName}</p>
-          <p><strong>Restaurant:</strong> ${reservation.restaurant}</p>
-          <p><strong>Time:</strong> ${reservation.time}</p>
-          <p><strong>Number of Guests (PAX):</strong> ${reservation.pax}</p>
-          <p><strong>Notes:</strong> ${reservation.notes || 'N/A'}</p>
-        `;
-        modal.style.display = 'block';
-      }
-
-      closeBtn.onclick = function() {
-        modal.style.display = 'none';
-      }
-
-      window.onclick = function(event) {
-        if (event.target == modal) {
-          modal.style.display = 'none';
+new Vue({
+    el: '#app',
+    data: {
+        surveys: [],
+        search: '',
+        sortBy: 'date',
+        filterScore: 'all'
+    },
+    created() {
+        this.loadSurveys();
+    },
+    methods: {
+        loadSurveys() {
+            database.ref('surveys').on('value', (snapshot) => {
+                const data = snapshot.val();
+                this.surveys = [];
+                for (let id in data) {
+                    const survey = data[id];
+                    // Calculate satisfaction score
+                    const ratings = survey.ratings.filter(r => r > 0);
+                    const score = (ratings.reduce((a, b) => a + b, 0) / ratings.length) * 20;
+                    this.surveys.push({
+                        id,
+                        ...survey,
+                        satisfactionScore: Math.round(score)
+                    });
+                }
+            });
+        },
+        formatDate(timestamp) {
+            return new Date(timestamp).toLocaleDateString();
+        },
+        getScoreClass(score) {
+            if (score >= 80) return 'score-excellent';
+            if (score >= 60) return 'score-good';
+            return 'score-poor';
         }
-      }
-
-      // Smooth expansion of input fields
-      const inputs = document.querySelectorAll('.input-group input, .input-group textarea');
-      inputs.forEach(input => {
-        input.addEventListener('focus', function() {
-          this.style.height = 'auto';
-          this.style.height = (this.scrollHeight) + 'px';
-        });
-        input.addEventListener('blur', function() {
-          this.style.height = '';
-        });
-      });
-    });
-  </script>
+    },
+    computed: {
+        filteredSurveys() {
+            let filtered = [...this.surveys];
+            
+            // Search filter
+            if (this.search) {
+                const searchLower = this.search.toLowerCase();
+                filtered = filtered.filter(s => 
+                    s.personalInfo.name.toLowerCase().includes(searchLower) ||
+                    s.personalInfo.roomNumber.toLowerCase().includes(searchLower)
+                );
+            }
+            
+            // Score filter
+            if (this.filterScore !== 'all') {
+                filtered = filtered.filter(s => {
+                    switch(this.filterScore) {
+                        case 'excellent': return s.satisfactionScore >= 80;
+                        case 'good': return s.satisfactionScore >= 60 && s.satisfactionScore < 80;
+                        case 'poor': return s.satisfactionScore < 60;
+                    }
+                });
+            }
+            
+            // Sorting
+            filtered.sort((a, b) => {
+                switch(this.sortBy) {
+                    case 'date':
+                        return new Date(b.timestamp) - new Date(a.timestamp);
+                    case 'score':
+                        return b.satisfactionScore - a.satisfactionScore;
+                    case 'name':
+                        return a.personalInfo.name.localeCompare(b.personalInfo.name);
+                }
+            });
+            
+            return filtered;
+        }
+    }
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
