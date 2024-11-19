@@ -8,6 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14/dist/vue.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.10.0/firebase-messaging-compat.js"></script>
 <style>
 body {
     font-family: 'Poppins', sans-serif;
@@ -87,6 +88,30 @@ body {
     min-width: 200px;
 }
 
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    background: #4CAF50;
+    color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
 @media (max-width: 768px) {
     .results-container {
         padding: 1rem;
@@ -104,6 +129,10 @@ body {
 </head>
 <body>
 <div id="app">
+    <div class="notification" v-if="showNotification">
+        Nueva encuesta recibida de {{ latestSurvey.personalInfo.name }}
+    </div>
+
     <div class="results-container">
         <h1 class="text-center mb-4">Survey Results Dashboard</h1>
         
@@ -174,10 +203,15 @@ new Vue({
         surveys: [],
         search: '',
         sortBy: 'date',
-        filterScore: 'all'
+        filterScore: 'all',
+        showNotification: false,
+        latestSurvey: null,
+        lastKnownKey: null,
+        audioContext: null
     },
     created() {
         this.loadSurveys();
+        this.setupNewSurveyListener();
     },
     methods: {
         loadSurveys() {
@@ -186,7 +220,6 @@ new Vue({
                 this.surveys = [];
                 for (let id in data) {
                     const survey = data[id];
-                    // Calculate satisfaction score
                     const ratings = survey.ratings.filter(r => r > 0);
                     const score = (ratings.reduce((a, b) => a + b, 0) / ratings.length) * 20;
                     this.surveys.push({
@@ -194,6 +227,45 @@ new Vue({
                         ...survey,
                         satisfactionScore: Math.round(score)
                     });
+                }
+            });
+        },
+        setupNewSurveyListener() {
+            database.ref('surveys').limitToLast(1).on('child_added', (snapshot) => {
+                if (this.lastKnownKey !== snapshot.key) {
+                    this.lastKnownKey = snapshot.key;
+                    const newSurvey = snapshot.val();
+                    this.latestSurvey = newSurvey;
+                    this.showNotification = true;
+                    
+                    // Create audio context on user interaction
+                    if (!this.audioContext) {
+                        this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    }
+
+                    // Try to play notification sound if audio context is running
+                    try {
+                        if (this.audioContext && this.audioContext.state === 'running') {
+                            const oscillator = this.audioContext.createOscillator();
+                            const gainNode = this.audioContext.createGain();
+                            
+                            oscillator.connect(gainNode);
+                            gainNode.connect(this.audioContext.destination);
+                            
+                            gainNode.gain.value = 0.1; // Reduced volume
+                            oscillator.frequency.value = 440; // A4 note
+                            
+                            oscillator.start();
+                            setTimeout(() => oscillator.stop(), 200); // Short beep
+                        }
+                    } catch (error) {
+                        console.log('Notification sound could not be played:', error);
+                    }
+
+                    // Hide notification after 5 seconds
+                    setTimeout(() => {
+                        this.showNotification = false;
+                    }, 5000);
                 }
             });
         },
@@ -210,7 +282,6 @@ new Vue({
         filteredSurveys() {
             let filtered = [...this.surveys];
             
-            // Search filter
             if (this.search) {
                 const searchLower = this.search.toLowerCase();
                 filtered = filtered.filter(s => 
@@ -219,7 +290,6 @@ new Vue({
                 );
             }
             
-            // Score filter
             if (this.filterScore !== 'all') {
                 filtered = filtered.filter(s => {
                     switch(this.filterScore) {
@@ -230,7 +300,6 @@ new Vue({
                 });
             }
             
-            // Sorting
             filtered.sort((a, b) => {
                 switch(this.sortBy) {
                     case 'date':
@@ -244,6 +313,17 @@ new Vue({
             
             return filtered;
         }
+    },
+    mounted() {
+        // Initialize audio context on first user interaction
+        document.addEventListener('click', () => {
+            if (!this.audioContext) {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (this.audioContext && this.audioContext.state === 'suspended') {
+                this.audioContext.resume();
+            }
+        }, { once: true });
     }
 });
 </script>
